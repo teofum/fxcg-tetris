@@ -9,6 +9,8 @@
 #include "grid.h"
 #include "tetromino.h"
 
+#define TICKS_PER_DAY 128 * 60 * 60 * 24
+
 int main() {
   color_t colors[21] = {
       color(160, 20, 40),  color(200, 80, 120), color(80, 10, 20),
@@ -44,6 +46,11 @@ int main() {
   uint32_t n_next = pcg32_rand(&rng) % 7;
   next_tetro(t_current, t_next, &n_current, &n_next, &rng);
 
+  // Game tick counter
+  uint32_t game_speed = 64; // RTC ticks to game ticks, 128 ticks = 1 second
+  int32_t last_ticks = RTC_GetTicks();
+  uint32_t tick_counter = 0;
+
   // Enable full-color mode
   Bdisp_EnableColor(1);
 
@@ -52,12 +59,23 @@ int main() {
     kb_update();
     kb_handle_special_keys();
 
-    // Rotate tetromino, unless it's a square block
-    if ((kb_keydown(KEY_PRGM_UP) || kb_keydown(KEY_PRGM_F1)) && n_current != 1)
-      try_rotate(grid, t_current, t_gridpos);
+    // Update game timer
+    int32_t current_ticks = RTC_GetTicks();
+    // Handle RTC tick reset at midnight
+    if (current_ticks < last_ticks)
+      last_ticks -= TICKS_PER_DAY;
+
+    tick_counter += current_ticks - last_ticks;
+    last_ticks = current_ticks;
+
+    int tick = tick_counter >= game_speed;
+    if (kb_keydown(KEY_PRGM_DOWN))
+      tick = 1;
 
     // Move tetromino down, on collision get next
-    if (kb_keydown(KEY_PRGM_DOWN)) {
+    if (tick) {
+      tick_counter = tick_counter > game_speed ? tick_counter - game_speed : 0;
+
       if (colcheck_down(grid, t_current, t_gridpos)) {
         tetro_to_grid(grid, t_current, n_current, t_gridpos);
         check_lines(grid);
@@ -68,6 +86,10 @@ int main() {
         t_gridpos.y++;
       }
     }
+
+    // Rotate tetromino, unless it's a square block
+    if ((kb_keydown(KEY_PRGM_UP) || kb_keydown(KEY_PRGM_F1)) && n_current != 1)
+      try_rotate(grid, t_current, t_gridpos);
 
     // Move tetromino
     if (kb_keydown(KEY_PRGM_LEFT) &&
