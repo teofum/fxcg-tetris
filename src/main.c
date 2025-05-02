@@ -1,6 +1,7 @@
 #include <fxcg/display.h>
 #include <fxcg/keyboard.h>
 #include <fxcg/rtc.h>
+#include <stdio.h>
 
 #include "utils/gfx.h"
 #include "utils/input.h"
@@ -10,6 +11,8 @@
 #include "tetromino.h"
 
 #define TICKS_PER_DAY 128 * 60 * 60 * 24
+
+uint32_t get_score(uint32_t lines) { return (1 << (lines - 1)) * 10; }
 
 int main() {
   color_t colors[21] = {
@@ -51,6 +54,12 @@ int main() {
   int32_t last_ticks = RTC_GetTicks();
   uint32_t tick_counter = 0;
 
+  // Score counters
+  uint32_t lines = 0;
+  uint32_t score = 0;
+  char lines_str[20];
+  char score_str[20];
+
   // Enable full-color mode
   Bdisp_EnableColor(1);
 
@@ -78,7 +87,11 @@ int main() {
 
       if (colcheck_down(grid, t_current, t_gridpos)) {
         tetro_to_grid(grid, t_current, n_current, t_gridpos);
-        check_lines(grid);
+        uint32_t cleared_lines = check_lines(grid);
+        if (cleared_lines) {
+          lines += cleared_lines;
+          score += get_score(cleared_lines);
+        }
 
         t_gridpos = (point){4, 1};
         next_tetro(t_current, t_next, &n_current, &n_next, &rng);
@@ -123,6 +136,24 @@ int main() {
     // Draw next tetromino preview
     draw_tetro(next_pos.x, next_pos.y, t_next, n_next, colors);
 
+    // Draw lines and score
+    sprintf(lines_str, "%u", lines);
+    sprintf(score_str, "%u", score);
+
+    int cur_x = 258;
+    int cur_y = 100;
+    PrintMiniMini(&cur_x, &cur_y, "Score", 0x40, 0, 0);
+    cur_x = 258;
+    cur_y += 24;
+    PrintMini(&cur_x, &cur_y, score_str, 0x42, 0xffffffff, 0, 0, 0, 0, 1, 0);
+    cur_x = 258;
+    cur_y += 32;
+    PrintMiniMini(&cur_x, &cur_y, "Lines", 0x40, 0, 0);
+    cur_x = 258;
+    cur_y += 24;
+    PrintMini(&cur_x, &cur_y, lines_str, 0x42, 0xffffffff, 0, 0, 0, 0, 1, 0);
+
+    // Present VRAM to screen
     Bdisp_PutDisp_DD();
   }
 

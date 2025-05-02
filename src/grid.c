@@ -122,8 +122,10 @@ int check_lines(uint32_t *grid) {
     }
   }
 
+  int cleared_lines = j >= 0 ? j + 1 : 0;
+
   for (int i = j; i >= 0; i--)
     grid[i] = 0;
 
-  return j > 0 ? j : 0;
+  return cleared_lines;
 }
