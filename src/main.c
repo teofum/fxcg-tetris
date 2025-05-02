@@ -95,6 +95,31 @@ int main() {
 
         t_gridpos = (point){4, 1};
         next_tetro(t_current, t_next, &n_current, &n_next, &rng);
+
+        if (colcheck_x(grid, t_current, t_gridpos, 0)) {
+          // Game over
+          disp_fill_rect(80, 40, LCD_WIDTH_PX - 80, LCD_HEIGHT_PX - 40, 0xffff);
+          int cur_x = 100, cur_y = 60;
+          PrintMiniMini(&cur_x, &cur_y, "Game Over", 0x40, 0, 0);
+          cur_x = 100;
+          cur_y += 16;
+          PrintMiniMini(&cur_x, &cur_y, "Press [EXE] to restart", 0x40, 0, 0);
+
+          int key = 0;
+          while (key != KEY_CTRL_EXE) {
+            GetKey(&key);
+          }
+
+          tick_counter = 0;
+          last_ticks = RTC_GetTicks();
+
+          score = lines = 0;
+          for (int i = 0; i < GRID_HEIGHT; i++)
+            grid[i] = 0;
+          t_gridpos = (point){4, 1};
+          n_next = pcg32_rand(&rng) % 7;
+          next_tetro(t_current, t_next, &n_current, &n_next, &rng);
+        }
       } else {
         t_gridpos.y++;
       }
