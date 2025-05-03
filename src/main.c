@@ -53,6 +53,7 @@ int main() {
   uint32_t game_speed = 64; // RTC ticks to game ticks, 128 ticks = 1 second
   int32_t last_ticks = RTC_GetTicks();
   uint32_t tick_counter = 0;
+  int holding_down = 0;
 
   // Score counters
   uint32_t lines = 0;
@@ -78,8 +79,11 @@ int main() {
     last_ticks = current_ticks;
 
     int tick = tick_counter >= game_speed;
-    if (kb_keydown(KEY_PRGM_DOWN))
+    if (kb_keydown(KEY_PRGM_DOWN) ||
+        (holding_down && kb_ispressed(KEY_PRGM_DOWN))) {
+      holding_down = 1;
       tick = 1;
+    }
 
     // Move tetromino down, on collision get next
     if (tick) {
@@ -95,6 +99,8 @@ int main() {
 
         t_gridpos = (point){4, 1};
         next_tetro(t_current, t_next, &n_current, &n_next, &rng);
+
+        holding_down = 0;
 
         if (colcheck_x(grid, t_current, t_gridpos, 0)) {
           // Game over
