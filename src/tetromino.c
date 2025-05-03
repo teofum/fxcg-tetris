@@ -7,6 +7,22 @@ tetromino_t tetrominoes[7] = {TETROMINO_I, TETROMINO_O, TETROMINO_T,
                               TETROMINO_J, TETROMINO_L, TETROMINO_S,
                               TETROMINO_Z};
 
+color_t colors[21] = {
+    COLOR(160, 20, 40),  COLOR(200, 80, 120), COLOR(80, 10, 20),
+
+    COLOR(160, 120, 20), COLOR(200, 160, 40), COLOR(80, 60, 10),
+
+    COLOR(160, 160, 40), COLOR(200, 200, 60), COLOR(80, 80, 20),
+
+    COLOR(40, 160, 20),  COLOR(60, 200, 40),  COLOR(20, 80, 10),
+
+    COLOR(20, 160, 160), COLOR(40, 200, 200), COLOR(10, 80, 80),
+
+    COLOR(40, 20, 180),  COLOR(60, 40, 240),  COLOR(20, 10, 100),
+
+    COLOR(160, 20, 160), COLOR(200, 40, 200), COLOR(80, 10, 80),
+};
+
 uint8_t enc_tetro_pos(int16_t x, int16_t y) {
   return ((x & 0xf) << 4) | (y & 0xf);
 }

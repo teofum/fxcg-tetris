@@ -17,7 +17,6 @@
 
 typedef struct {
   pcg32_random_t rng;
-  color_t *colors;
 
   uint32_t grid[GRID_HEIGHT];
   point next_pos;
@@ -40,7 +39,7 @@ typedef struct {
   char score_str[20];
 } game_t;
 
-void game_init(game_t *game, color_t *colors);
+void game_init(game_t *game);
 
 void game_update(game_t *game);
 

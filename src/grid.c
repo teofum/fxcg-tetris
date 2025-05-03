@@ -2,7 +2,7 @@
 #include "tetromino.h"
 #include <string.h>
 
-static void draw_block(rect r, uint32_t color, color_t *colors) {
+static void draw_block(rect r, uint32_t color) {
   color_t primary = colors[color * 3];
   color_t highlight = colors[color * 3 + 1];
   color_t shadow = colors[color * 3 + 2];
@@ -19,7 +19,7 @@ static inline uint32_t grid_value(uint32_t *grid, uint32_t x, uint32_t y) {
   return (grid[y] >> (3 * (GRID_WIDTH - 1 - x))) & 7;
 }
 
-void draw_grid(uint32_t *grid, color_t *colors) {
+void draw_grid(uint32_t *grid) {
   for (uint32_t y = 0; y < GRID_HEIGHT; y++) {
     for (uint32_t x = 0; x < GRID_WIDTH; x++) {
       // 3 bits per block
@@ -33,14 +33,13 @@ void draw_grid(uint32_t *grid, color_t *colors) {
             .y1 = r.y0 + GRID_BLOCK_SIZE - 1,
         };
 
-        draw_block(r, block_color - 1, colors);
+        draw_block(r, block_color - 1);
       }
     }
   }
 }
 
-void draw_tetro(int16_t x, int16_t y, tetromino_t tetro, uint32_t color,
-                color_t *colors) {
+void draw_tetro(int16_t x, int16_t y, tetromino_t tetro, uint32_t color) {
   for (int32_t i = 0; i < 4; i++) {
     point block = dec_tetro_pos(tetro[i]);
     rect r = {
@@ -50,7 +49,7 @@ void draw_tetro(int16_t x, int16_t y, tetromino_t tetro, uint32_t color,
         .y1 = r.y0 + GRID_BLOCK_SIZE - 1,
     };
 
-    draw_block(r, color, colors);
+    draw_block(r, color);
   }
 }
 

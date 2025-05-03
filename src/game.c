@@ -1,8 +1,14 @@
 #include "game.h"
+#include "fxcg/display.h"
 
-#define NEXT_X 258 + 18
-#define NEXT_Y 18 + 18
-#define SCORE_X 258
+#define NEXT_X 266
+#define NEXT_Y (GRID_START_Y - 8)
+#define NEXT_W 72
+#define NEXT_H 72
+#define SCORE_X 266
+#define SCORE_Y (NEXT_Y + NEXT_H + 16)
+#define SCORE_W NEXT_W
+#define SCORE_H (NEXT_Y + 196 - SCORE_Y - 1)
 
 static uint32_t get_score(uint32_t lines) { return (1 << (lines - 1)) * 10; }
 
@@ -11,9 +17,7 @@ static void game_next_tetro(game_t *game) {
              &game->rng);
 }
 
-void game_init(game_t *game, color_t *colors) {
-  game->colors = colors;
-
+void game_init(game_t *game) {
   // Seed the RNG with current time
   uint32_t hour, minute, second, milli;
   RTC_GetTime(&hour, &minute, &second, &milli);
@@ -55,11 +59,20 @@ static void game_tick(game_t *game) {
 
     if (colcheck_x(game->grid, game->t_current, game->t_gridpos, 0)) {
       // Game over
-      disp_fill_rect(80, 40, LCD_WIDTH_PX - 80, LCD_HEIGHT_PX - 40, 0xffff);
-      int cur_x = 100, cur_y = 60;
-      PrintMiniMini(&cur_x, &cur_y, "Game Over", 0x40, 0, 0);
+      sprintf(game->score_str, "%u", game->score);
+
+      disp_shade_rect(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX, COLOR_WHITE);
+
+      disp_frame(80, 40, LCD_WIDTH_PX - 80, LCD_HEIGHT_PX - 40, COLOR_RED);
+      PrintCXY(100, 36, "Game Over", 0x20, -1, 0, 0, 1, 0);
+
+      int cur_x = 100, cur_y = 106;
+      PrintMiniMini(&cur_x, &cur_y, "Your Score:", 0x42, 0, 0);
+      cur_x += 8;
+      cur_y -= 34;
+      PrintCXY(cur_x, cur_y, game->score_str, 0x20, -1, 0, 0, 1, 0);
       cur_x = 100;
-      cur_y += 16;
+      cur_y += 76;
       PrintMiniMini(&cur_x, &cur_y, "Press [EXE] to restart", 0x40, 0, 0);
 
       int key = 0;
@@ -67,7 +80,7 @@ static void game_tick(game_t *game) {
         GetKey(&key);
       }
 
-      game_init(game, game->colors);
+      game_init(game);
     }
   } else {
     game->t_gridpos.y++;
@@ -116,41 +129,51 @@ void game_update(game_t *game) {
 }
 
 void game_draw(game_t *game) {
-  // Draw grid borders
-  int16_t gx0 = GRID_START_X - 1,
-          gx1 = GRID_START_X + GRID_WIDTH * GRID_BLOCK_SIZE,
-          gy0 = GRID_START_Y - 1,
-          gy1 = GRID_START_Y + GRID_HEIGHT * GRID_BLOCK_SIZE;
-  disp_fill_rect(gx0, gy0, gx1, gy0, 0);
-  disp_fill_rect(gx0, gy1, gx1, gy1, 0);
-  disp_fill_rect(gx0, gy0 + 1, gx0, gy1 - 1, 0);
-  disp_fill_rect(gx1, gy0 + 1, gx1, gy1 - 1, 0);
+  // Draw grid frame
+  int16_t gx0 = GRID_START_X,
+          gx1 = GRID_START_X + GRID_WIDTH * GRID_BLOCK_SIZE - 1,
+          gy0 = GRID_START_Y,
+          gy1 = GRID_START_Y + GRID_HEIGHT * GRID_BLOCK_SIZE - 1;
+  disp_frame(gx0 - 8, gy0 - 8, gx1 + 8, gy1 + 8, COLOR_BLUE);
 
   // Draw the grid with all "settled" blocks
-  draw_grid(game->grid, game->colors);
+  draw_grid(game->grid);
 
   // Draw the current tetromino in play
   draw_tetro(GRID_START_X + game->t_gridpos.x * GRID_BLOCK_SIZE,
              GRID_START_Y + game->t_gridpos.y * GRID_BLOCK_SIZE,
-             game->t_current, game->n_current, game->colors);
+             game->t_current, game->n_current);
+
+  int cur_x = 0, cur_y = 0;
+
+  // Measure string
+  PrintMiniMini(&cur_x, &cur_y, "Next", 0x42, 0, 1);
 
   // Draw next tetromino preview
-  draw_tetro(NEXT_X, NEXT_Y, game->t_next, game->n_next, game->colors);
+  disp_frame(NEXT_X, NEXT_Y, NEXT_X + NEXT_W, NEXT_Y + NEXT_H, COLOR_BLUE);
+  draw_tetro(NEXT_X + 26, NEXT_Y + 26, game->t_next, game->n_next);
+
+  cur_x = NEXT_X + (NEXT_W >> 1) - (cur_x >> 1);
+  cur_y = NEXT_Y + NEXT_H - 20;
+  PrintMiniMini(&cur_x, &cur_y, "Next", 0x42, 0, 0);
 
   // Draw lines and score
   sprintf(game->lines_str, "%u", game->lines);
   sprintf(game->score_str, "%u", game->score);
 
-  int cur_x = SCORE_X;
-  int cur_y = 100;
-  PrintMiniMini(&cur_x, &cur_y, "Score", 0x40, 0, 0);
-  cur_x = SCORE_X;
-  cur_y += 24;
+  disp_frame(SCORE_X, SCORE_Y, SCORE_X + SCORE_W, SCORE_Y + SCORE_H,
+             COLOR_BLUE);
+
+  cur_x = SCORE_X + 16;
+  cur_y = SCORE_Y + 16;
+  PrintMiniMini(&cur_x, &cur_y, "Score", 0x42, 0, 0);
+  cur_x = SCORE_X + 16;
+  cur_y += 16;
   PrintMini(&cur_x, &cur_y, game->score_str, 0x42, -1, 0, 0, 0, 0, 1, 0);
-  cur_x = SCORE_X;
-  cur_y += 32;
-  PrintMiniMini(&cur_x, &cur_y, "Lines", 0x40, 0, 0);
-  cur_x = SCORE_X;
+  cur_x = SCORE_X + 16;
   cur_y += 24;
+  PrintMiniMini(&cur_x, &cur_y, "Lines", 0x42, 0, 0);
+  cur_x = SCORE_X + 16;
+  cur_y += 16;
   PrintMini(&cur_x, &cur_y, game->lines_str, 0x42, -1, 0, 0, 0, 0, 1, 0);
 }
