@@ -16,6 +16,8 @@ typedef struct {
   int16_t x0, y0, x1, y1;
 } rect;
 
+void draw_block(rect r, uint32_t color);
+
 void draw_grid(uint32_t *grid);
 
 void draw_tetro(int16_t x, int16_t y, tetromino_t tetro, uint32_t color);

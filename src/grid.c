@@ -2,7 +2,7 @@
 #include "tetromino.h"
 #include <string.h>
 
-static void draw_block(rect r, uint32_t color) {
+void draw_block(rect r, uint32_t color) {
   color_t primary = colors[color * 3];
   color_t highlight = colors[color * 3 + 1];
   color_t shadow = colors[color * 3 + 2];
