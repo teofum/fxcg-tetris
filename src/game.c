@@ -1,5 +1,6 @@
 #include "game.h"
-#include "fxcg/display.h"
+
+#include "utils/dialog.h"
 
 #define NEXT_X 266
 #define NEXT_Y (GRID_START_Y - 8)
@@ -9,6 +10,9 @@
 #define SCORE_Y (NEXT_Y + NEXT_H + 16)
 #define SCORE_W NEXT_W
 #define SCORE_H (NEXT_Y + 196 - SCORE_Y - 1)
+
+const char *pause_opts[3] = {"Resume", "Restart", "Main Menu"};
+const char *gameover_opts[2] = {"Play again", "Main Menu"};
 
 static uint32_t get_score(uint32_t lines) { return (1 << (lines - 1)) * 10; }
 
@@ -42,6 +46,21 @@ void game_init(game_t *game) {
   game->score = 0;
 }
 
+static void gameover_draw_score(void *score_str) {
+  int cur_x = 100, cur_y = 106;
+  PrintMiniMini(&cur_x, &cur_y, "Your Score:", 0x42, 0, 0);
+  cur_x += 8;
+  cur_y -= 34;
+  PrintCXY(cur_x, cur_y, score_str, 0x20, -1, 0, 0, 1, 0);
+}
+
+static void showgameover(game_t *game) {
+  sprintf(game->score_str, "%u", game->score);
+
+  uint32_t option = dialog("Game Over", gameover_opts, 2, COLOR_RED,
+                           gameover_draw_score, game->score_str);
+}
+
 static void game_tick(game_t *game) {
   if (colcheck_down(game->grid, game->t_current, game->t_gridpos)) {
     tetro_to_grid(game->grid, game->t_current, game->n_current,
@@ -59,31 +78,30 @@ static void game_tick(game_t *game) {
 
     if (colcheck_x(game->grid, game->t_current, game->t_gridpos, 0)) {
       // Game over
-      sprintf(game->score_str, "%u", game->score);
-
-      disp_shade_rect(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX, COLOR_WHITE);
-
-      disp_frame(80, 40, LCD_WIDTH_PX - 80, LCD_HEIGHT_PX - 40, COLOR_RED);
-      PrintCXY(100, 36, "Game Over", 0x20, -1, 0, 0, 1, 0);
-
-      int cur_x = 100, cur_y = 106;
-      PrintMiniMini(&cur_x, &cur_y, "Your Score:", 0x42, 0, 0);
-      cur_x += 8;
-      cur_y -= 34;
-      PrintCXY(cur_x, cur_y, game->score_str, 0x20, -1, 0, 0, 1, 0);
-      cur_x = 100;
-      cur_y += 76;
-      PrintMiniMini(&cur_x, &cur_y, "Press [EXE] to restart", 0x40, 0, 0);
-
-      int key = 0;
-      while (key != KEY_CTRL_EXE) {
-        GetKey(&key);
-      }
-
+      showgameover(game);
       game_init(game);
     }
   } else {
     game->t_gridpos.y++;
+  }
+}
+
+static void showpausemenu(game_t *game) {
+  disp_shade_rect(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX, COLOR_WHITE);
+
+  uint32_t option = dialog("Paused", pause_opts, 3, COLOR_BLUE, NULL, NULL);
+  switch (option) {
+  case 0:
+    game->last_ticks = RTC_GetTicks();
+    game->tick_counter = 0;
+    game->holding_down = 0;
+    return;
+  case 1:
+    game_init(game);
+    return;
+  case 2:
+    game_init(game);
+    return;
   }
 }
 
@@ -100,6 +118,10 @@ static void handle_input(game_t *game) {
   if (kb_keydown(KEY_PRGM_RIGHT) &&
       !colcheck_x(game->grid, game->t_current, game->t_gridpos, 1))
     game->t_gridpos.x++;
+
+  // Pause
+  if (kb_keydown(KEY_PRGM_EXIT))
+    showpausemenu(game);
 }
 
 void game_update(game_t *game) {
