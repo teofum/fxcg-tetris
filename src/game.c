@@ -54,14 +54,18 @@ static void gameover_draw_score(void *score_str) {
   PrintCXY(cur_x, cur_y, score_str, 0x20, -1, 0, 0, 1, 0);
 }
 
-static void showgameover(game_t *game) {
+static int showgameover(game_t *game) {
   sprintf(game->score_str, "%u", game->score);
 
   uint32_t option = dialog("Game Over", gameover_opts, 2, COLOR_RED,
                            gameover_draw_score, game->score_str);
+
+  return option == 0;
 }
 
-static void game_tick(game_t *game) {
+static int game_tick(game_t *game) {
+  int continue_game = 1;
+
   if (colcheck_down(game->grid, game->t_current, game->t_gridpos)) {
     tetro_to_grid(game->grid, game->t_current, game->n_current,
                   game->t_gridpos);
@@ -78,34 +82,36 @@ static void game_tick(game_t *game) {
 
     if (colcheck_x(game->grid, game->t_current, game->t_gridpos, 0)) {
       // Game over
-      showgameover(game);
+      continue_game = showgameover(game);
       game_init(game);
     }
   } else {
     game->t_gridpos.y++;
   }
+
+  return continue_game;
 }
 
-static void showpausemenu(game_t *game) {
+static int showpausemenu(game_t *game) {
   disp_shade_rect(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX, COLOR_WHITE);
 
   uint32_t option = dialog("Paused", pause_opts, 3, COLOR_BLUE, NULL, NULL);
   switch (option) {
+  case 1:
+    game_init(game);
+    return 1;
+  case 2:
+    return 0;
   case 0:
+  default:
     game->last_ticks = RTC_GetTicks();
     game->tick_counter = 0;
     game->holding_down = 0;
-    return;
-  case 1:
-    game_init(game);
-    return;
-  case 2:
-    game_init(game);
-    return;
+    return 1;
   }
 }
 
-static void handle_input(game_t *game) {
+static int handle_input(game_t *game) {
   // Rotate tetromino, unless it's a square block
   if ((kb_keydown(KEY_PRGM_UP) || kb_keydown(KEY_PRGM_F1)) &&
       game->n_current != 1)
@@ -121,10 +127,14 @@ static void handle_input(game_t *game) {
 
   // Pause
   if (kb_keydown(KEY_PRGM_EXIT))
-    showpausemenu(game);
+    return showpausemenu(game);
+
+  return 1;
 }
 
-void game_update(game_t *game) {
+int game_update(game_t *game) {
+  int continue_game = 1;
+
   // Update game timer
   int32_t current_ticks = RTC_GetTicks();
   if (current_ticks < game->last_ticks) // Handle RTC tick reset at midnight
@@ -144,10 +154,11 @@ void game_update(game_t *game) {
     game->tick_counter = game->tick_counter > game->game_speed
                              ? game->tick_counter - game->game_speed
                              : 0;
-    game_tick(game);
+    continue_game &= game_tick(game);
   }
 
-  handle_input(game);
+  continue_game &= handle_input(game);
+  return continue_game;
 }
 
 void game_draw(game_t *game) {

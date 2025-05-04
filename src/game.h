@@ -41,7 +41,7 @@ typedef struct {
 
 void game_init(game_t *game);
 
-void game_update(game_t *game);
+int game_update(game_t *game);
 
 void game_draw(game_t *game);
 
