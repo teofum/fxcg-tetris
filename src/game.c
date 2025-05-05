@@ -10,6 +10,10 @@
 #define SCORE_Y (NEXT_Y + NEXT_H + 16)
 #define SCORE_W NEXT_W
 #define SCORE_H (NEXT_Y + 196 - SCORE_Y - 1)
+#define LEVEL_X 142 - 24 - 72
+#define LEVEL_Y NEXT_Y
+#define LEVEL_W 72
+#define LEVEL_H 66
 
 const char *pause_opts[3] = {"Resume", "Restart", "Main Menu"};
 const char *gameover_opts[2] = {"Play again", "Main Menu"};
@@ -17,6 +21,11 @@ const char *gameover_opts[2] = {"Play again", "Main Menu"};
 static uint32_t get_score(uint32_t lines) { return (1 << (lines - 1)) * 10; }
 
 static void game_next_tetro(game_t *game) {
+  // Advance game speed after 50 tetrominoes
+  game->total_tetros++;
+  if (game->total_tetros % 50 == 0 && game->game_speed > 16)
+    game->game_speed -= 8;
+
   next_tetro(game->t_current, game->t_next, &game->n_current, &game->n_next,
              &game->rng);
 }
@@ -36,9 +45,10 @@ void game_init(game_t *game) {
   game_next_tetro(game);
 
   // Game tick counter
-  game->game_speed = 64; // RTC ticks to game ticks, 128 ticks = 1 second
+  game->game_speed = INITIAL_SPEED;
   game->last_ticks = RTC_GetTicks();
   game->tick_counter = 0;
+  game->total_tetros = 0;
   game->holding_down = 0;
 
   // Score counters
@@ -154,6 +164,7 @@ int game_update(game_t *game) {
     game->tick_counter = game->tick_counter > game->game_speed
                              ? game->tick_counter - game->game_speed
                              : 0;
+
     continue_game &= game_tick(game);
   }
 
@@ -209,4 +220,22 @@ void game_draw(game_t *game) {
   cur_x = SCORE_X + 16;
   cur_y += 16;
   PrintMini(&cur_x, &cur_y, game->lines_str, 0x42, -1, 0, 0, 0, 0, 1, 0);
+
+  // Draw level
+  char level_str[4];
+  sprintf(level_str, "%u", (INITIAL_SPEED + 8 - game->game_speed) >> 3);
+
+  disp_frame(LEVEL_X, LEVEL_Y, LEVEL_X + LEVEL_W, LEVEL_Y + LEVEL_H,
+             COLOR_BLUE);
+
+  cur_x = LEVEL_X + 16;
+  cur_y = LEVEL_Y + 16;
+  PrintMiniMini(&cur_x, &cur_y, "Level", 0x42, 0, 0);
+  cur_x = LEVEL_X + 16;
+  cur_y += 16;
+  PrintMini(&cur_x, &cur_y, level_str, 0x42, -1, 0, 0, 0, 0, 1, 0);
+
+  short end_x = LEVEL_X + 8 + ((LEVEL_W - 16) * (game->total_tetros % 50)) / 50;
+  disp_fill_rect(LEVEL_X + 8, LEVEL_Y + LEVEL_H - 9, end_x,
+                 LEVEL_Y + LEVEL_H - 8, COLOR_DARKTURQUOISE);
 }

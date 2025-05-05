@@ -14,6 +14,7 @@
 #include "tetromino.h"
 
 #define TICKS_PER_DAY 128 * 60 * 60 * 24
+#define INITIAL_SPEED 64
 
 typedef struct {
   pcg32_random_t rng;
@@ -37,6 +38,7 @@ typedef struct {
   uint32_t score;
   char lines_str[20];
   char score_str[20];
+  uint32_t total_tetros;
 } game_t;
 
 void game_init(game_t *game);
