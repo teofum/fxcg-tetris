@@ -72,7 +72,8 @@ int colcheck_x(uint32_t *grid, tetromino_t tetro, point gridpos, int dx) {
     local_gridpos.x += gridpos.x + dx;
     local_gridpos.y += gridpos.y;
 
-    if (local_gridpos.x < 0 || local_gridpos.x >= GRID_WIDTH ||
+    if (local_gridpos.y < 0 || local_gridpos.y >= GRID_HEIGHT ||
+        local_gridpos.x < 0 || local_gridpos.x >= GRID_WIDTH ||
         grid_value(grid, local_gridpos.x, local_gridpos.y))
       return 1;
   }

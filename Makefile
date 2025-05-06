@@ -32,7 +32,7 @@ ADDINNAME	:=	Tetris
 # options for code and add-in generation
 #---------------------------------------------------------------------------------
 
-MKG3AFLAGS := -n "basic:$(ADDINNAME)" -i uns:../resource/unselected.bmp -i sel:../resource/selected.bmp
+MKG3AFLAGS := -n "basic:$(ADDINNAME)" -i uns:../resource/unselected.png -i sel:../resource/selected.png
 
 # Optional: add -flto to CFLAGS and LDFLAGS to enable link-time optimization
 # (LTO). Doing so will usually allow the compiler to generate much better code
