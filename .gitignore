@@ -1,5 +1,12 @@
-build/
-*.bin
-*.g3a
+# Build files
+/build*/
+/*.g1a
+/*.g3a
 
-.DS_Store
+# Python bytecode
+__pycache__/
+
+# Common IDE files
+*.sublime-project
+*.sublime-workspace
+.vscode

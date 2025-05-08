@@ -1,16 +1,13 @@
 #ifndef __GAME_H__
 #define __GAME_H__
 
-#include <fxcg/display.h>
-#include <fxcg/keyboard.h>
-#include <fxcg/rtc.h>
 #include <stdio.h>
 
 #include "utils/gfx.h"
-#include "utils/input.h"
 #include "utils/rng.h"
 
 #include "grid.h"
+#include "hscore.h"
 #include "tetromino.h"
 
 #define TICKS_PER_DAY 128 * 60 * 60 * 24
@@ -39,6 +36,9 @@ typedef struct {
   char lines_str[20];
   char score_str[20];
   uint32_t total_tetros;
+
+  // Highscores
+  highscore_t hscores[HSCORE_COUNT];
 } game_t;
 
 void game_init(game_t *game);

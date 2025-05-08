@@ -1,14 +1,10 @@
 #ifndef __GFX_H__
 #define __GFX_H__
 
-#include <fxcg/display.h>
-
-#include "types.h"
+#include <gint/display.h>
 
 #define COLOR(r, g, b)                                                         \
   (((r >> 3) & 0x1f) << 11) + (((g >> 2) & 0x3f) << 5) + ((b >> 3) & 0x1f)
-
-void disp_fill_rect(short x0, short y0, short x1, short y1, color_t color);
 
 void disp_shade_rect(short x0, short y0, short x1, short y1, color_t color);
 

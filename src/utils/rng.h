@@ -1,7 +1,7 @@
 #ifndef __RNG_H__
 #define __RNG_H__
 
-#include "types.h"
+#include <gint/cpu.h>
 
 // https://github.com/imneme/pcg-c-basic/blob/master/pcg_basic.c
 typedef struct {

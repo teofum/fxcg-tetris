@@ -1,11 +1,9 @@
 #include "mainmenu.h"
-
-#include <fxcg/display.h>
-#include <fxcg/keyboard.h>
-
 #include "grid.h"
 
-#define LOGO_START_X ((LCD_WIDTH_PX >> 1) - 105)
+#include <gint/keyboard.h>
+
+#define LOGO_START_X ((DWIDTH >> 1) - 105)
 #define LOGO_START_Y 40
 #define BLOCK_X(x) (LOGO_START_X + x * GRID_BLOCK_SIZE)
 #define BLOCK_Y(y) (LOGO_START_Y + y * GRID_BLOCK_SIZE)
@@ -14,7 +12,7 @@
           BLOCK_Y(y) + GRID_BLOCK_SIZE - 1})
 
 int mm_show() {
-  Bdisp_AllClr_VRAM();
+  dclear(C_WHITE);
 
   // Show logo
   draw_block(BLOCK(0, 0), 0);
@@ -70,14 +68,16 @@ int mm_show() {
   draw_block(BLOCK(19, 4), 5);
 
   int x = 0, y = 0;
-  PrintMini(&x, &y, "Press [EXE] to start", 0x42, -1, 0, 0, 0, 0, 0, 0);
-  x = (LCD_WIDTH_PX >> 1) - (x >> 1);
-  y = 136;
-  PrintMini(&x, &y, "Press [EXE] to start", 0x42, -1, 0, 0, 0, 0, 1, 0);
+  // PrintMini(&x, &y, "Press [EXE] to start", 0x42, -1, 0, 0, 0, 0, 0, 0);
+  // x = (LCD_WIDTH_PX >> 1) - (x >> 1);
+  // y = 136;
+  // PrintMini(&x, &y, "Press [EXE] to start", 0x42, -1, 0, 0, 0, 0, 1, 0);
 
-  int key = 0;
-  while (key != KEY_CTRL_EXE) {
-    GetKey(&key);
+  clearevents();
+  key_event_t event = {0};
+  while (event.key != KEY_EXE) {
+    dupdate();
+    event = getkey();
   }
 
   return 1;

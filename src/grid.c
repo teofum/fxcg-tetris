@@ -8,11 +8,11 @@ void draw_block(rect r, uint32_t color) {
   color_t shadow = colors[color * 3 + 2];
 
   // Draw a nice block
-  disp_fill_rect(r.x0, r.y0, r.x1, r.y1, primary);
-  disp_fill_rect(r.x0, r.y0, r.x0, r.y1, highlight);
-  disp_fill_rect(r.x0 + 1, r.y0, r.x1, r.y0, highlight);
-  disp_fill_rect(r.x1, r.y0, r.x1, r.y1, shadow);
-  disp_fill_rect(r.x0, r.y1, r.x1 - 1, r.y1, shadow);
+  drect(r.x0, r.y0, r.x1, r.y1, primary);
+  drect(r.x0, r.y0, r.x0, r.y1, highlight);
+  drect(r.x0 + 1, r.y0, r.x1, r.y0, highlight);
+  drect(r.x1, r.y0, r.x1, r.y1, shadow);
+  drect(r.x0, r.y1, r.x1 - 1, r.y1, shadow);
 }
 
 static inline uint32_t grid_value(uint32_t *grid, uint32_t x, uint32_t y) {
@@ -93,8 +93,12 @@ int colcheck_down(uint32_t *grid, tetromino_t tetro, point gridpos) {
   return 0;
 }
 
-void tetro_to_grid(uint32_t *grid, tetromino_t tetro, uint32_t color,
-                   point gridpos) {
+void tetro_to_grid(
+    uint32_t *grid,
+    tetromino_t tetro,
+    uint32_t color,
+    point gridpos
+) {
   for (int i = 0; i < 4; i++) {
     point local_gridpos = dec_tetro_pos(tetro[i]);
     local_gridpos.x += gridpos.x;

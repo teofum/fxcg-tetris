@@ -2,7 +2,6 @@
 #define __GRID_H__
 
 #include "utils/gfx.h"
-#include "utils/types.h"
 
 #include "tetromino.h"
 
@@ -28,8 +27,12 @@ int colcheck_x(uint32_t *grid, tetromino_t tetro, point gridpos, int dx);
 
 int colcheck_down(uint32_t *grid, tetromino_t tetro, point gridpos);
 
-void tetro_to_grid(uint32_t *grid, tetromino_t tetro, uint32_t color,
-                   point gridpos);
+void tetro_to_grid(
+    uint32_t *grid,
+    tetromino_t tetro,
+    uint32_t color,
+    point gridpos
+);
 
 int check_lines(uint32_t *grid);
 

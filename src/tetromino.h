@@ -1,11 +1,8 @@
 #ifndef __TETROMINO_H__
 #define __TETROMINO_H__
 
-#include <fxcg/display.h>
-
 #include "utils/gfx.h"
 #include "utils/rng.h"
-#include "utils/types.h"
 
 typedef uint8_t tetromino_t[4];
 
@@ -29,7 +26,12 @@ point dec_tetro_pos(uint8_t pos);
 
 void rotate_tetro(tetromino_t tetro);
 
-void next_tetro(tetromino_t current, tetromino_t next, uint32_t *n_current,
-                uint32_t *n_next, pcg32_random_t *rng);
+void next_tetro(
+    tetromino_t current,
+    tetromino_t next,
+    uint32_t *n_current,
+    uint32_t *n_next,
+    pcg32_random_t *rng
+);
 
 #endif

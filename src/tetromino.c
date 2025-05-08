@@ -9,17 +9,11 @@ tetromino_t tetrominoes[7] = {TETROMINO_I, TETROMINO_O, TETROMINO_T,
 
 color_t colors[21] = {
     COLOR(160, 20, 40),  COLOR(200, 80, 120), COLOR(80, 10, 20),
-
     COLOR(160, 120, 20), COLOR(200, 160, 40), COLOR(80, 60, 10),
-
     COLOR(160, 160, 40), COLOR(200, 200, 60), COLOR(80, 80, 20),
-
     COLOR(40, 160, 20),  COLOR(60, 200, 40),  COLOR(20, 80, 10),
-
     COLOR(20, 160, 160), COLOR(40, 200, 200), COLOR(10, 80, 80),
-
     COLOR(40, 20, 180),  COLOR(60, 40, 240),  COLOR(20, 10, 100),
-
     COLOR(160, 20, 160), COLOR(200, 40, 200), COLOR(80, 10, 80),
 };
 
@@ -43,8 +37,13 @@ void rotate_tetro(tetromino_t tetro) {
   }
 }
 
-void next_tetro(tetromino_t current, tetromino_t next, uint32_t *n_current,
-                uint32_t *n_next, pcg32_random_t *rng) {
+void next_tetro(
+    tetromino_t current,
+    tetromino_t next,
+    uint32_t *n_current,
+    uint32_t *n_next,
+    pcg32_random_t *rng
+) {
   *n_current = *n_next;
   *n_next = pcg32_rand(rng) % 7;
 

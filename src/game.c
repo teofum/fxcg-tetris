@@ -2,6 +2,11 @@
 
 #include "utils/dialog.h"
 
+#include <gint/keyboard.h>
+#include <gint/rtc.h>
+
+#include "utils/font.h"
+
 #define NEXT_X 266
 #define NEXT_Y (GRID_START_Y - 8)
 #define NEXT_W 72
@@ -13,10 +18,14 @@
 #define LEVEL_X 142 - 24 - 72
 #define LEVEL_Y NEXT_Y
 #define LEVEL_W 72
-#define LEVEL_H 66
+#define LEVEL_H 110
+
+#define NUM_HEADING 18
+#define NUM_SPACING 24
 
 const char *pause_opts[3] = {"Resume", "Restart", "Main Menu"};
 const char *gameover_opts[2] = {"Play again", "Main Menu"};
+const char *hscore_opts[1] = {"OK"};
 
 static uint32_t get_score(uint32_t lines) { return (1 << (lines - 1)) * 10; }
 
@@ -26,16 +35,19 @@ static void game_next_tetro(game_t *game) {
   if (game->total_tetros % 50 == 0 && game->game_speed > 16)
     game->game_speed -= 8;
 
-  next_tetro(game->t_current, game->t_next, &game->n_current, &game->n_next,
-             &game->rng);
+  next_tetro(
+      game->t_current, game->t_next, &game->n_current, &game->n_next, &game->rng
+  );
 }
 
 void game_init(game_t *game) {
   // Seed the RNG with current time
-  uint32_t hour, minute, second, milli;
-  RTC_GetTime(&hour, &minute, &second, &milli);
-  pcg32_srand(&game->rng, (uint64_t)second << 32 | milli,
-              (uint64_t)hour << 32 | minute);
+  rtc_time_t time;
+  rtc_get_time(&time);
+  pcg32_srand(
+      &game->rng, (uint64_t)time.seconds << 32 | time.ticks,
+      (uint64_t)time.hours << 32 | time.minutes
+  );
 
   // Initialize game state
   for (int i = 0; i < GRID_HEIGHT; i++)
@@ -46,7 +58,7 @@ void game_init(game_t *game) {
 
   // Game tick counter
   game->game_speed = INITIAL_SPEED;
-  game->last_ticks = RTC_GetTicks();
+  game->last_ticks = rtc_ticks();
   game->tick_counter = 0;
   game->total_tetros = 0;
   game->holding_down = 0;
@@ -57,18 +69,38 @@ void game_init(game_t *game) {
 }
 
 static void gameover_draw_score(void *score_str) {
-  int cur_x = 100, cur_y = 106;
-  PrintMiniMini(&cur_x, &cur_y, "Your Score:", 0x42, 0, 0);
-  cur_x += 8;
-  cur_y -= 34;
-  PrintCXY(cur_x, cur_y, score_str, 0x20, -1, 0, 0, 1, 0);
+  int cur_x = 96, cur_y = 112;
+  dtext_opt(
+      cur_x, cur_y, C_BLACK, C_NONE, DTEXT_LEFT, DTEXT_BOTTOM, "Your Score:"
+  );
+
+  cur_x += 90;
+  const font_t *prev_font = dfont(&dosv_ank24);
+  dtext_opt(cur_x, cur_y, C_BLACK, C_NONE, DTEXT_LEFT, DTEXT_BOTTOM, score_str);
+  dfont(prev_font);
 }
 
 static int showgameover(game_t *game) {
   sprintf(game->score_str, "%u", game->score);
 
-  uint32_t option = dialog("Game Over", gameover_opts, 2, COLOR_RED,
-                           gameover_draw_score, game->score_str);
+  if (hscore_check(game->hscores, game->score)) {
+    dialog("New highscore!", hscore_opts, 1, 80, 40, C_BLUE, NULL, NULL);
+
+    highscore_t newscore = {
+        .name = "AAA",
+        .score = game->score,
+    };
+    hscore_insert(game->hscores, newscore);
+
+    gint_call_t call_hscore_save =
+        GINT_CALL(hscore_save, (void *)game->hscores);
+    gint_world_switch(call_hscore_save);
+  }
+
+  uint32_t option = dialog(
+      "Game Over", gameover_opts, 2, 80, 40, C_RED, gameover_draw_score,
+      game->score_str
+  );
 
   return option == 0;
 }
@@ -77,8 +109,9 @@ static int game_tick(game_t *game) {
   int continue_game = 1;
 
   if (colcheck_down(game->grid, game->t_current, game->t_gridpos)) {
-    tetro_to_grid(game->grid, game->t_current, game->n_current,
-                  game->t_gridpos);
+    tetro_to_grid(
+        game->grid, game->t_current, game->n_current, game->t_gridpos
+    );
     uint32_t cleared_lines = check_lines(game->grid);
     if (cleared_lines) {
       game->lines += cleared_lines;
@@ -103,9 +136,7 @@ static int game_tick(game_t *game) {
 }
 
 static int showpausemenu(game_t *game) {
-  disp_shade_rect(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX, COLOR_WHITE);
-
-  uint32_t option = dialog("Paused", pause_opts, 3, COLOR_BLUE, NULL, NULL);
+  uint32_t option = dialog("Paused", pause_opts, 3, 80, 40, C_BLUE, NULL, NULL);
   switch (option) {
   case 1:
     game_init(game);
@@ -114,7 +145,7 @@ static int showpausemenu(game_t *game) {
     return 0;
   case 0:
   default:
-    game->last_ticks = RTC_GetTicks();
+    game->last_ticks = rtc_ticks();
     game->tick_counter = 0;
     game->holding_down = 0;
     return 1;
@@ -123,20 +154,19 @@ static int showpausemenu(game_t *game) {
 
 static int handle_input(game_t *game) {
   // Rotate tetromino, unless it's a square block
-  if ((kb_keydown(KEY_PRGM_UP) || kb_keydown(KEY_PRGM_F1)) &&
-      game->n_current != 1)
+  if ((keypressed(KEY_UP) || keypressed(KEY_F1)) && game->n_current != 1)
     try_rotate(game->grid, game->t_current, game->t_gridpos);
 
   // Move tetromino
-  if (kb_keydown(KEY_PRGM_LEFT) &&
+  if (keypressed(KEY_LEFT) &&
       !colcheck_x(game->grid, game->t_current, game->t_gridpos, -1))
     game->t_gridpos.x--;
-  if (kb_keydown(KEY_PRGM_RIGHT) &&
+  if (keypressed(KEY_RIGHT) &&
       !colcheck_x(game->grid, game->t_current, game->t_gridpos, 1))
     game->t_gridpos.x++;
 
   // Pause
-  if (kb_keydown(KEY_PRGM_EXIT))
+  if (keypressed(KEY_EXIT))
     return showpausemenu(game);
 
   return 1;
@@ -146,7 +176,7 @@ int game_update(game_t *game) {
   int continue_game = 1;
 
   // Update game timer
-  int32_t current_ticks = RTC_GetTicks();
+  int32_t current_ticks = rtc_ticks();
   if (current_ticks < game->last_ticks) // Handle RTC tick reset at midnight
     game->last_ticks -= TICKS_PER_DAY;
 
@@ -154,8 +184,7 @@ int game_update(game_t *game) {
   game->last_ticks = current_ticks;
 
   int tick = game->tick_counter >= game->game_speed;
-  if (kb_keydown(KEY_PRGM_DOWN) ||
-      (game->holding_down && kb_ispressed(KEY_PRGM_DOWN))) {
+  if (keypressed(KEY_DOWN) || (game->holding_down && keydown(KEY_DOWN))) {
     game->holding_down = 1;
     tick = 1;
   }
@@ -178,64 +207,69 @@ void game_draw(game_t *game) {
           gx1 = GRID_START_X + GRID_WIDTH * GRID_BLOCK_SIZE - 1,
           gy0 = GRID_START_Y,
           gy1 = GRID_START_Y + GRID_HEIGHT * GRID_BLOCK_SIZE - 1;
-  disp_frame(gx0 - 8, gy0 - 8, gx1 + 8, gy1 + 8, COLOR_BLUE);
+  disp_frame(gx0 - 8, gy0 - 8, gx1 + 8, gy1 + 8, C_BLUE);
 
   // Draw the grid with all "settled" blocks
   draw_grid(game->grid);
 
   // Draw the current tetromino in play
-  draw_tetro(GRID_START_X + game->t_gridpos.x * GRID_BLOCK_SIZE,
-             GRID_START_Y + game->t_gridpos.y * GRID_BLOCK_SIZE,
-             game->t_current, game->n_current);
+  draw_tetro(
+      GRID_START_X + game->t_gridpos.x * GRID_BLOCK_SIZE,
+      GRID_START_Y + game->t_gridpos.y * GRID_BLOCK_SIZE, game->t_current,
+      game->n_current
+  );
 
   int cur_x = 0, cur_y = 0;
 
-  // Measure string
-  PrintMiniMini(&cur_x, &cur_y, "Next", 0x42, 0, 1);
-
   // Draw next tetromino preview
-  disp_frame(NEXT_X, NEXT_Y, NEXT_X + NEXT_W, NEXT_Y + NEXT_H, COLOR_BLUE);
+  disp_frame(NEXT_X, NEXT_Y, NEXT_X + NEXT_W, NEXT_Y + NEXT_H, C_BLUE);
   draw_tetro(NEXT_X + 26, NEXT_Y + 26, game->t_next, game->n_next);
 
   cur_x = NEXT_X + (NEXT_W >> 1) - (cur_x >> 1);
   cur_y = NEXT_Y + NEXT_H - 20;
-  PrintMiniMini(&cur_x, &cur_y, "Next", 0x42, 0, 0);
+  dtext_opt(cur_x, cur_y, C_BLACK, C_NONE, DTEXT_CENTER, DTEXT_TOP, "Next");
 
   // Draw lines and score
   sprintf(game->lines_str, "%u", game->lines);
   sprintf(game->score_str, "%u", game->score);
 
-  disp_frame(SCORE_X, SCORE_Y, SCORE_X + SCORE_W, SCORE_Y + SCORE_H,
-             COLOR_BLUE);
+  disp_frame(SCORE_X, SCORE_Y, SCORE_X + SCORE_W, SCORE_Y + SCORE_H, C_BLUE);
 
   cur_x = SCORE_X + 16;
   cur_y = SCORE_Y + 16;
-  PrintMiniMini(&cur_x, &cur_y, "Score", 0x42, 0, 0);
-  cur_x = SCORE_X + 16;
-  cur_y += 16;
-  PrintMini(&cur_x, &cur_y, game->score_str, 0x42, -1, 0, 0, 0, 0, 1, 0);
-  cur_x = SCORE_X + 16;
-  cur_y += 24;
-  PrintMiniMini(&cur_x, &cur_y, "Lines", 0x42, 0, 0);
-  cur_x = SCORE_X + 16;
-  cur_y += 16;
-  PrintMini(&cur_x, &cur_y, game->lines_str, 0x42, -1, 0, 0, 0, 0, 1, 0);
+  dtext(cur_x, cur_y, C_BLACK, "Score");
+  cur_y += NUM_HEADING;
+  font_t *prev_font = dfont(&nix_m16);
+  dprint(cur_x, cur_y, C_BLACK, "%u", game->score);
+  dfont(prev_font);
+  cur_y += NUM_SPACING;
+  dtext(cur_x, cur_y, C_BLACK, "High");
+  cur_y += NUM_HEADING;
+  prev_font = dfont(&nix_m16);
+  dprint(cur_x, cur_y, C_BLACK, "%u", game->hscores[0].score);
+  dfont(prev_font);
 
   // Draw level
-  char level_str[4];
-  sprintf(level_str, "%u", (INITIAL_SPEED + 8 - game->game_speed) >> 3);
-
-  disp_frame(LEVEL_X, LEVEL_Y, LEVEL_X + LEVEL_W, LEVEL_Y + LEVEL_H,
-             COLOR_BLUE);
+  disp_frame(LEVEL_X, LEVEL_Y, LEVEL_X + LEVEL_W, LEVEL_Y + LEVEL_H, C_BLUE);
 
   cur_x = LEVEL_X + 16;
   cur_y = LEVEL_Y + 16;
-  PrintMiniMini(&cur_x, &cur_y, "Level", 0x42, 0, 0);
-  cur_x = LEVEL_X + 16;
-  cur_y += 16;
-  PrintMini(&cur_x, &cur_y, level_str, 0x42, -1, 0, 0, 0, 0, 1, 0);
+  dtext(cur_x, cur_y, C_BLACK, "Level");
+  cur_y += NUM_HEADING;
+  prev_font = dfont(&nix_m16);
+  dprint(
+      cur_x, cur_y, C_BLACK, "%u", (INITIAL_SPEED + 8 - game->game_speed) >> 3
+  );
+  dfont(prev_font);
+  cur_y += NUM_SPACING;
+  dtext(cur_x, cur_y, C_BLACK, "Lines");
+  cur_y += NUM_HEADING;
+  prev_font = dfont(&nix_m16);
+  dprint(cur_x, cur_y, C_BLACK, "%u", game->lines);
+  dfont(prev_font);
 
   short end_x = LEVEL_X + 8 + ((LEVEL_W - 16) * (game->total_tetros % 50)) / 50;
-  disp_fill_rect(LEVEL_X + 8, LEVEL_Y + LEVEL_H - 9, end_x,
-                 LEVEL_Y + LEVEL_H - 8, COLOR_DARKTURQUOISE);
+  drect(
+      LEVEL_X + 8, LEVEL_Y + LEVEL_H - 9, end_x, LEVEL_Y + LEVEL_H - 8, C_RED
+  );
 }

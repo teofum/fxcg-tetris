@@ -1,0 +1,43 @@
+example.png:
+  type: bopti-image
+  name: img_example
+
+dosv_jpn_6x12.png:
+  name: dosv_jpn12
+  type: font
+  charset: print
+  grid.size: 6x12
+  grid.padding: 1
+  grid.border: 0
+  proportional: false
+  height: 11
+
+dosv_ank_8x16.png:
+  name: dosv_ank16
+  type: font
+  charset: print
+  grid.size: 8x16
+  grid.padding: 1
+  grid.border: 0
+  proportional: false
+  height: 14
+
+dosv_ank_12x24.png:
+  name: dosv_ank24
+  type: font
+  charset: print
+  grid.size: 12x24
+  grid.padding: 1
+  grid.border: 0
+  proportional: false
+  height: 21
+
+nix_m16_8x16.png:
+  name: nix_m16
+  type: font
+  charset: print
+  grid.size: 8x16
+  grid.padding: 1
+  grid.border: 0
+  proportional: false
+  height: 14
