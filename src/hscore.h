@@ -6,7 +6,7 @@
 #define HSCORE_COUNT 5
 
 typedef struct {
-  char name[4];
+  char name[12];
   uint32_t score;
 } highscore_t;
 

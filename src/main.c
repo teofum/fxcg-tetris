@@ -17,7 +17,7 @@ int main() {
 
   int game_running = 0;
   while (1) {
-    game_running = mm_show();
+    game_running = mm_show(&game);
 
     if (game_running == 1)
       // Initialize game

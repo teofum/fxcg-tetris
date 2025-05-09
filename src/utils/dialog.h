@@ -14,4 +14,14 @@ uint32_t dialog(
     void *cb_param
 );
 
+void dialog_textinput(
+    const char *title,
+    const char *prompt,
+    char *text_out,
+    uint32_t max_length,
+    int16_t margin_x,
+    int16_t margin_y,
+    color_t frame_color
+);
+
 #endif

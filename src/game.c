@@ -4,6 +4,7 @@
 
 #include <gint/keyboard.h>
 #include <gint/rtc.h>
+#include <string.h>
 
 #include "utils/font.h"
 
@@ -84,12 +85,16 @@ static int showgameover(game_t *game) {
   sprintf(game->score_str, "%u", game->score);
 
   if (hscore_check(game->hscores, game->score)) {
-    dialog("New highscore!", hscore_opts, 1, 80, 40, C_BLUE, NULL, NULL);
+    char player_name[8] = {0};
+    dialog_textinput(
+        "New highscore!", "Enter your name:", player_name, 7, 80, 40, C_BLUE
+    );
 
     highscore_t newscore = {
-        .name = "AAA",
+        .name = "",
         .score = game->score,
     };
+    strcpy(newscore.name, player_name);
     hscore_insert(game->hscores, newscore);
 
     gint_call_t call_hscore_save =
