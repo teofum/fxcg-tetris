@@ -26,11 +26,9 @@ set(ASSETS
   # ...
 )
 set(ASSETS_fx
-  assets-fx/example.png
   # ...
 )
 set(ASSETS_cg
-  assets-cg/example.png
   assets-cg/dosv_jpn_6x12.png
   assets-cg/dosv_ank_8x16.png
   assets-cg/dosv_ank_12x24.png

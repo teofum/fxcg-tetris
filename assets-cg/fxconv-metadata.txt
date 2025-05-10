@@ -1,4 +1,4 @@
-example.png:
+icon.png:
   type: bopti-image
   name: img_example
 
