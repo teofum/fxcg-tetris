@@ -1,0 +1,3 @@
+-DFXCG50
+-I/Users/teo/.local/share/fxsdk/sysroot/lib/gcc/sh3eb-elf/14.1.0/include 
+-I/Users/teo/.local/share/fxsdk/sysroot/sh3eb-elf/include
